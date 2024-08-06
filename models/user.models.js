@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-import bcrypt, { genSalt } from "bcryptjs";
+import bcrypt from "bcryptjs";
 dotenv.config();
 
 const userSchema = new mongoose.Schema(
@@ -31,17 +31,19 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 //middleware to hash the password before the save
-userSchema.pre("save", async (next) => {
+userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
+    next();
   } catch (error) {
     next(error);
   }
 });
+
 //middleware to hash the password
-UserSchema.methods.isPasswordCorrect = async function (password) {
+userSchema.methods.isPasswordCorrect = async function (password) {
   return bcrypt.compare(password, this.password);
 };
 //middleware to genrate the token
@@ -68,4 +70,5 @@ userSchema.methods.generateRefreshToken = async function () {
     { expiresIn: "7d" }
   );
 };
+
 export const User = mongoose.model("User", userSchema);
